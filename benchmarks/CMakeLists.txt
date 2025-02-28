@@ -1,0 +1,4 @@
+find_package(benchmark REQUIRED)
+
+add_executable(benchmark_pubsub benchmark.cpp)
+target_link_libraries(benchmark_pubsub publish_subscribe_lib benchmark::benchmark)
