@@ -44,7 +44,7 @@ void Server::handle_read(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
     if (!error) {
         // Parse the received message
         std::string message(buffer->data(), bytes_transferred);
-        std::cout << "Received message: " << message << "\n";
+        std::cout << "Received message: " << message << std::endl;
 
         Message msg = Message::deserialize(message);
 

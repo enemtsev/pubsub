@@ -21,9 +21,12 @@ int main() {
     // Print the help message at the start
     print_help();
 
+    boost::asio::io_context::work work(io_context);
+
     // Start a thread to run the IO context for asynchronous operations
     std::thread t([&io_context]() {
         io_context.run();
+        std::cout << "done context client\n";
     });
 
     std::string command;
