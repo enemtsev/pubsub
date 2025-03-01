@@ -14,7 +14,6 @@ target_link_libraries(test_message publish_subscribe_lib GTest::GTest GTest::Mai
 
 # Enable testing and add tests
 include(CTest)
-enable_testing()
 
 add_test(NAME test_client COMMAND test_client)
 add_test(NAME test_server COMMAND test_server)
