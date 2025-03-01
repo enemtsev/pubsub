@@ -1,5 +1,6 @@
 #include "message.h"
 #include <algorithm>
+#include <boost/log/trivial.hpp>
 #include <sstream>
 #include <vector>
 

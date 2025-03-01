@@ -20,9 +20,12 @@ public:
 
 private:
     void process_message(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const std::string &message);
+    void handle_disconnect(std::shared_ptr<boost::asio::ip::tcp::socket> socket);
+    void cleanup();
 
     boost::asio::ip::tcp::acceptor acceptor_;
     TopicManager& topic_manager_;
+    std::unordered_map<std::shared_ptr<boost::asio::ip::tcp::socket>, std::set<std::string>> client_subscriptions_;
 };
 
 #endif // SERVER_H
