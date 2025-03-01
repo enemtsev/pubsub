@@ -14,11 +14,13 @@ public:
     void start_accept();
     void handle_accept(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const boost::system::error_code& error);
     void handle_read(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
-                     std::shared_ptr<std::array<char, 1024>> buffer,
-                     const boost::system::error_code& error,
+                     std::shared_ptr<std::string> client_buffer,
+                     std::shared_ptr<std::array<char, 1024>> read_buffer, const boost::system::error_code &error,
                      std::size_t bytes_transferred);
 
 private:
+    void process_message(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const std::string &message);
+
     boost::asio::ip::tcp::acceptor acceptor_;
     TopicManager& topic_manager_;
 };

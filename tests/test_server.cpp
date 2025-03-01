@@ -21,54 +21,51 @@ protected:
 
 TEST_F(ServerTest, AcceptsClientConnection) {
     // Simulate a client connecting to the server
-
     boost::asio::io_context client1_io_context;
-    Client client1(client1_io_context);
+    boost::asio::io_context client2_io_context;
 
     // Run the server in a separate thread
     std::thread server_thread([this]() {
-        std::cout << "run context server\n";
         io_context->run();
-        std::cout << "done context server\n";
     });
 
-    std::thread client_thread([]() {
-        boost::asio::io_context client_io_context;
-        Client client(client_io_context);
+    Client client1(client1_io_context);
+    Client client2(client2_io_context);
 
-        client.connect("127.0.0.1", "12345", "name");
-        client.subscribe("topic");
+    std::thread client1_thread([&client1_io_context]() {
+        boost::asio::io_context::work work(client1_io_context);
 
-        client_io_context.run();
-        std::cout << "done context client\n";
+        client1_io_context.run();
     });
 
-    std::thread client1_thread([this, &client1_io_context]() {
-        boost::asio::io_context client_io_context;
-        Client client(client_io_context);
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        // Connect the client to the server
-        client.connect("127.0.0.1", "12345", "name1");
-        client.publish("topic", "data");
-
-        client_io_context.run();
-        std::cout << "done context client\n";
+    std::thread client2_thread([&client2_io_context]() {
+        boost::asio::io_context::work work(client2_io_context);
+        client2_io_context.run();
     });
 
+    client1.connect("127.0.0.1", "12345", "client1");
+    // std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    client1.subscribe("topic");
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     // Connect the client to the server
+    client2.connect("127.0.0.1", "12345", "client2");
+    // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    client2.publish("topic", "data");
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    client2.publish("topic", "data");
 
-    // std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    // // Connect the client to the server
-    // client1.connect("127.0.0.1", "12345", "name1");
-    // std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    // client1.publish("topic", "data");
-    // std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    client2.publish("topic", "data");
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    client2.publish("topic", "data1");
+
+    client2.publish("topic", "data1");
 
     // Clean up
     server_thread.join();
-    client_thread.join();
     client1_thread.join();
+    client2_thread.join();
 }
 
 TEST_F(ServerTest, HandlesPublishMessage) {

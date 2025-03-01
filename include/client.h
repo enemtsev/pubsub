@@ -16,7 +16,6 @@ public:
     void subscribe(const std::string& topic);
     void unsubscribe(const std::string& topic);
     void start_reading();
-    boost::asio::ip::tcp::socket& get_socket();
 
 private:
     void handle_read(const boost::system::error_code& error, std::size_t bytes_transferred);
