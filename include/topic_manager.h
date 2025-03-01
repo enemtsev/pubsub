@@ -12,6 +12,7 @@ public:
     static TopicManager& get_instance();
     void subscribe(const std::string& topic, std::shared_ptr<boost::asio::ip::tcp::socket> socket);
     void unsubscribe(const std::string& topic, std::shared_ptr<boost::asio::ip::tcp::socket> socket);
+    void unsubscribe_all(std::shared_ptr<boost::asio::ip::tcp::socket> socket);
     void publish(const std::string& topic, const std::string& data);
 
 private:

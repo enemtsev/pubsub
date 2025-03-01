@@ -1,14 +1,17 @@
 #include <gtest/gtest.h>
 #include <boost/asio.hpp>
-#include "client.h"
 #include "message.h"
-#include "server.h"
+#include "mock_server.h"
+#include "pubsub_client.h"
+
+using ::testing::_;
+using ::testing::Eq;
 
 class ServerTest : public ::testing::Test {
 protected:
     void SetUp() override {
         io_context = std::make_shared<boost::asio::io_context>();
-        server = std::make_unique<Server>(*io_context, 12345);
+        mock_server = std::make_unique<MockServer>(*io_context, 12345);
     }
 
     void TearDown() override {
@@ -16,10 +19,107 @@ protected:
     }
 
     std::shared_ptr<boost::asio::io_context> io_context;
-    std::unique_ptr<Server> server;
+    std::unique_ptr<MockServer> mock_server;
 };
 
+// Test that the server accepts client connections
 TEST_F(ServerTest, AcceptsClientConnection) {
+    // Create a mock socket
+    auto mock_socket = std::make_shared<boost::asio::ip::tcp::socket>(*io_context);
+
+    // Simulate a CONNECT message
+    std::string connect_message = "CONNECT client1\n";
+
+    // Expect the process_message method to be called with the CONNECT message
+    EXPECT_CALL(*mock_server, process_message(mock_socket, Eq(connect_message))).Times(1);
+
+    // Trigger the process_message method
+    mock_server->process_message(mock_socket, connect_message);
+}
+
+// Test that the server handles client disconnections gracefully
+TEST_F(ServerTest, HandlesClientDisconnect) {
+    // Create a mock socket
+    auto mock_socket = std::make_shared<boost::asio::ip::tcp::socket>(*io_context);
+
+    // Simulate a DISCONNECT message
+    std::string disconnect_message = "DISCONNECT\n";
+
+    // Expect the process_message method to be called with the DISCONNECT message
+    EXPECT_CALL(*mock_server, process_message(mock_socket, Eq(disconnect_message))).Times(1);
+
+    // Expect the handle_disconnect method to be called with the mock socket
+    EXPECT_CALL(*mock_server, handle_disconnect(mock_socket)).Times(1);
+
+    // Trigger the process_message method
+    mock_server->process_message(mock_socket, disconnect_message);
+
+    // Trigger the handle_disconnect method
+    mock_server->handle_disconnect(mock_socket);
+}
+
+// Test that the server processes subscribe messages correctly
+TEST_F(ServerTest, HandlesSubscribeMessage) {
+    // Create a mock socket
+    auto mock_socket = std::make_shared<boost::asio::ip::tcp::socket>(*io_context);
+
+    // Simulate a SUBSCRIBE message
+    std::string subscribe_message = "SUBSCRIBE topic\n";
+
+    // Expect the process_message method to be called with the SUBSCRIBE message
+    EXPECT_CALL(*mock_server, process_message(mock_socket, Eq(subscribe_message))).Times(1);
+
+    // Trigger the process_message method
+    mock_server->process_message(mock_socket, subscribe_message);
+}
+
+// Test that the server processes publish messages correctly
+TEST_F(ServerTest, HandlesPublishMessage) {
+    // Simulate a PUBLISH message
+    std::string publish_message = "PUBLISH topic data\n";
+
+    // Expect the process_message method to be called with the PUBLISH message
+    EXPECT_CALL(*mock_server, process_message(_, Eq(publish_message))).Times(1);
+
+    // Trigger the process_message method
+    mock_server->process_message(nullptr, publish_message);  // Socket is not needed for publish
+}
+
+// Test that the server processes unsubscribe messages correctly
+TEST_F(ServerTest, HandlesUnsubscribeMessage) {
+    // Create a mock socket
+    auto mock_socket = std::make_shared<boost::asio::ip::tcp::socket>(*io_context);
+
+    // Simulate an UNSUBSCRIBE message
+    std::string unsubscribe_message = "UNSUBSCRIBE topic\n";
+
+    // Expect the process_message method to be called with the UNSUBSCRIBE message
+    EXPECT_CALL(*mock_server, process_message(mock_socket, Eq(unsubscribe_message))).Times(1);
+
+    // Trigger the process_message method
+    mock_server->process_message(mock_socket, unsubscribe_message);
+}
+
+// Test that the server handles multiple clients correctly
+TEST_F(ServerTest, HandlesMultipleClients) {
+    // Create mock sockets for two clients
+    auto mock_socket1 = std::make_shared<boost::asio::ip::tcp::socket>(*io_context);
+    auto mock_socket2 = std::make_shared<boost::asio::ip::tcp::socket>(*io_context);
+
+    // Simulate CONNECT messages for both clients
+    std::string connect_message1 = "CONNECT client1\n";
+    std::string connect_message2 = "CONNECT client2\n";
+
+    // Expect the process_message method to be called for both clients
+    EXPECT_CALL(*mock_server, process_message(mock_socket1, Eq(connect_message1))).Times(1);
+    EXPECT_CALL(*mock_server, process_message(mock_socket2, Eq(connect_message2))).Times(1);
+
+    // Trigger the process_message method for both clients
+    mock_server->process_message(mock_socket1, connect_message1);
+    mock_server->process_message(mock_socket2, connect_message2);
+}
+
+TEST_F(ServerTest, AcceptsClientsConnection) {
     // Simulate a client connecting to the server
     boost::asio::io_context client1_io_context;
     boost::asio::io_context client2_io_context;
@@ -29,8 +129,8 @@ TEST_F(ServerTest, AcceptsClientConnection) {
         io_context->run();
     });
 
-    Client client1(client1_io_context);
-    Client client2(client2_io_context);
+    PubSubClient client1(client1_io_context);
+    PubSubClient client2(client2_io_context);
 
     // Threads for running client IO contexts
     std::thread client1_thread([&client1_io_context]() {
@@ -89,8 +189,8 @@ TEST_F(ServerTest, NoCrashWhenClientDisconnectsAndOtherClientPublishes) {
         io_context->run();
     });
 
-    Client client1(client1_io_context);
-    Client client2(client2_io_context);
+    PubSubClient client1(client1_io_context);
+    PubSubClient client2(client2_io_context);
 
     // Threads for running client IO contexts
     std::thread client1_thread([&client1_io_context]() {

@@ -3,7 +3,7 @@
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/utility/setup/console.hpp>
 #include <iostream>
-#include "server.h"
+#include "pubsub_server.h"
 
 void init_logging() {
     boost::log::add_console_log(std::cout, boost::log::keywords::format = "%TimeStamp% [%Severity%]: %Message%");
@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
     }
 
     boost::asio::io_context io_context;
-    Server server(io_context, std::atoi(argv[1]));
+    PubSubServer server(io_context, std::atoi(argv[1]));
     io_context.run();
     return 0;
 }

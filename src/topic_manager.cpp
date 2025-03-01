@@ -1,6 +1,5 @@
 #include "topic_manager.h"
 #include <boost/log/trivial.hpp>
-#include <iostream>
 
 TopicManager &TopicManager::get_instance() {
     static TopicManager instance;
@@ -9,12 +8,31 @@ TopicManager &TopicManager::get_instance() {
 
 void TopicManager::subscribe(const std::string &topic, std::shared_ptr<boost::asio::ip::tcp::socket> socket) {
     topics_[topic].insert(socket);
-    BOOST_LOG_TRIVIAL(info) << "[topic_manager] Client subscribed to topic: " << topic;
 }
 
 void TopicManager::unsubscribe(const std::string &topic, std::shared_ptr<boost::asio::ip::tcp::socket> socket) {
-    topics_[topic].erase(socket);
-    BOOST_LOG_TRIVIAL(info) << "[topic_manager] Client unsubscribed from topic: " << topic;
+    auto it = topics_.find(topic);
+    if (it != topics_.end()) {
+        it->second.erase(socket);
+        if (it->second.empty()) {
+            topics_.erase(it);
+        }
+    }
+}
+
+void TopicManager::unsubscribe_all(std::shared_ptr<boost::asio::ip::tcp::socket> socket) {
+    for (auto &topic_entry : topics_) {
+        topic_entry.second.erase(socket);
+    }
+
+    // Optionally, remove topics that have no subscribers left
+    for (auto it = topics_.begin(); it != topics_.end();) {
+        if (it->second.empty()) {
+            it = topics_.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 void TopicManager::publish(const std::string &topic, const std::string &data) {

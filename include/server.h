@@ -11,6 +11,8 @@
 class Server {
 public:
     Server(boost::asio::io_context& io_context, short port);
+    virtual ~Server() = default;
+
     void start_accept();
     void handle_accept(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const boost::system::error_code& error);
     void handle_read(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
@@ -18,14 +20,12 @@ public:
                      std::shared_ptr<std::array<char, 1024>> read_buffer, const boost::system::error_code &error,
                      std::size_t bytes_transferred);
 
-private:
-    void process_message(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const std::string &message);
-    void handle_disconnect(std::shared_ptr<boost::asio::ip::tcp::socket> socket);
-    void cleanup();
+    virtual void process_message(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const std::string &message) = 0;
+    virtual void handle_disconnect(std::shared_ptr<boost::asio::ip::tcp::socket> socket);
 
+protected:
     boost::asio::ip::tcp::acceptor acceptor_;
     TopicManager& topic_manager_;
-    std::unordered_map<std::shared_ptr<boost::asio::ip::tcp::socket>, std::set<std::string>> client_subscriptions_;
 };
 
 #endif // SERVER_H

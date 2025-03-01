@@ -81,52 +81,8 @@ void Server::handle_read(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
     }
 }
 
-void Server::process_message(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const std::string &message) {
-    Message msg = Message::deserialize(message);
-
-    // Handle the message based on its type
-    switch (msg.type) {
-        case MessageType::CONNECT:
-            BOOST_LOG_TRIVIAL(info) << "[server] Client connected: " << msg.client_name;
-            break;
-
-        case MessageType::DISCONNECT:
-            BOOST_LOG_TRIVIAL(info) << "[server] Client disconnected";
-            handle_disconnect(socket);
-            break;
-
-        case MessageType::SUBSCRIBE:
-            BOOST_LOG_TRIVIAL(info) << "[server] Client subscribed to topic: " << msg.topic;
-            topic_manager_.subscribe(msg.topic, socket);
-            client_subscriptions_[socket].insert(msg.topic);
-            break;
-
-        case MessageType::UNSUBSCRIBE:
-            BOOST_LOG_TRIVIAL(info) << "[server] Client unsubscribed from topic: " << msg.topic;
-            topic_manager_.unsubscribe(msg.topic, socket);
-            client_subscriptions_[socket].erase(msg.topic);
-            break;
-
-        case MessageType::PUBLISH:
-            BOOST_LOG_TRIVIAL(info) << "[server] Publishing message to topic: " << msg.topic;
-            topic_manager_.publish(msg.topic, msg.data);
-            break;
-
-        default:
-            BOOST_LOG_TRIVIAL(error) << "[server] Unknown message type received";
-            break;
-    }
-}
-
 void Server::handle_disconnect(std::shared_ptr<boost::asio::ip::tcp::socket> socket) {
-    // Unsubscribe the client from all topics
-    auto it = client_subscriptions_.find(socket);
-    if (it != client_subscriptions_.end()) {
-        for (const auto &topic : it->second) {
-            topic_manager_.unsubscribe(topic, socket);
-        }
-        client_subscriptions_.erase(it);
-    }
+    topic_manager_.unsubscribe_all(socket);
 
     // Close the socket
     if (socket->is_open()) {
@@ -142,25 +98,4 @@ void Server::handle_disconnect(std::shared_ptr<boost::asio::ip::tcp::socket> soc
     }
 
     BOOST_LOG_TRIVIAL(info) << "[server] Client disconnected and unsubscribed from all topics";
-}
-
-void Server::cleanup() {
-    for (auto &[socket, topics] : client_subscriptions_) {
-        for (const auto &topic : topics) {
-            topic_manager_.unsubscribe(topic, socket);
-        }
-        if (socket->is_open()) {
-            boost::system::error_code ec;
-            socket->shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
-            if (ec) {
-                BOOST_LOG_TRIVIAL(error) << "[server] Error shutting down socket: " << ec.message();
-            }
-            socket->close(ec);
-            if (ec) {
-                BOOST_LOG_TRIVIAL(error) << "[server] Error closing socket: " << ec.message();
-            }
-        }
-    }
-    client_subscriptions_.clear();
-    BOOST_LOG_TRIVIAL(info) << "[server] Cleaned up all client subscriptions";
 }

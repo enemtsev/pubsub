@@ -5,7 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
-#include "client.h"
+#include "pubsub_client.h"
 
 void init_logging() {
     boost::log::add_console_log(std::cout, boost::log::keywords::format = "%TimeStamp% [%Severity%]: %Message%");
@@ -23,7 +23,7 @@ void print_help() {
     BOOST_LOG_TRIVIAL(info) << "  HELP                        - Display this help message";
 }
 
-void handle_console_input(boost::asio::posix::stream_descriptor &input, Client &client) {
+void handle_console_input(boost::asio::posix::stream_descriptor &input, PubSubClient &client) {
     auto buffer = std::make_shared<boost::asio::streambuf>();
     boost::asio::async_read_until(
         input, *buffer, '\n', [&, buffer](const boost::system::error_code &ec, std::size_t length) {
@@ -84,7 +84,7 @@ int main() {
     init_logging();  // Initialize Boost.Log
 
     boost::asio::io_context io_context;
-    Client client(io_context);
+    PubSubClient client(io_context);
 
     // Print the help message at the start
     print_help();
