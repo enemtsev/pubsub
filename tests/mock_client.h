@@ -17,7 +17,7 @@ public:
         PubSubClient::write(message);
     }
 
-    const std::vector<Message>& getCapturedMessages() const {
+    const std::vector<Message>& get_captured_messages() const {
         return captured_messages_;
     }
 

@@ -2,9 +2,10 @@
 #include <boost/log/trivial.hpp>
 #include "message.h"
 
+TopicManager TopicManager::instance_;
+
 TopicManager &TopicManager::get_instance() {
-    static TopicManager instance;
-    return instance;
+    return instance_;
 }
 
 void TopicManager::subscribe(const std::string &topic, std::shared_ptr<boost::asio::ip::tcp::socket> socket) {

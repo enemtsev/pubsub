@@ -16,6 +16,7 @@ public:
     void publish(const std::string& topic, const std::string& data);
 
 private:
+    static TopicManager instance_;
     TopicManager() {}
     std::unordered_map<std::string, std::set<std::shared_ptr<boost::asio::ip::tcp::socket>>> topics_;
 };

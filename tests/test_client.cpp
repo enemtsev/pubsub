@@ -41,7 +41,7 @@ TEST_F(ClientTest, ConnectsToServer) {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     // Validate the captured messages
-    const auto &messages = client.getCapturedMessages();
+    const auto &messages = client.get_captured_messages();
     ASSERT_EQ(messages.size(), 1);
     EXPECT_EQ(messages[0].type, MessageType::CONNECT);
     EXPECT_EQ(messages[0].client_name, "client1");
@@ -81,7 +81,7 @@ TEST_F(ClientTest, SendsSubscribeMessage) {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     // Validate the captured messages
-    const auto &messages = client.getCapturedMessages();
+    const auto &messages = client.get_captured_messages();
     ASSERT_EQ(messages.size(), 2);
     EXPECT_EQ(messages[0].type, MessageType::CONNECT);
     EXPECT_EQ(messages[0].client_name, "client1");
@@ -121,7 +121,7 @@ TEST_F(ClientTest, SendsPublishMessage) {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     // Validate the captured messages
-    const auto &messages = client.getCapturedMessages();
+    const auto &messages = client.get_captured_messages();
     ASSERT_EQ(messages.size(), 2);
     EXPECT_EQ(messages[0].type, MessageType::CONNECT);
     EXPECT_EQ(messages[0].client_name, "client1");

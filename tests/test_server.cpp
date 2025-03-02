@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <boost/asio.hpp>
 #include "message.h"
+#include "mock_client.h"
 #include "mock_server.h"
-#include "pubsub_client.h"
 
 using ::testing::_;
 using ::testing::Eq;
@@ -31,8 +31,8 @@ TEST_F(ServerTest, AcceptsClientsConnection) {
         io_context.run();
     });
 
-    PubSubClient client1(client1_io_context);
-    PubSubClient client2(client2_io_context);
+    MockClient client1(client1_io_context);
+    MockClient client2(client2_io_context);
 
     // Threads for running client IO contexts
     std::thread client1_thread([&client1_io_context]() {
@@ -51,6 +51,23 @@ TEST_F(ServerTest, AcceptsClientsConnection) {
 
     ASSERT_NO_THROW(client1.subscribe("topic"));
 
+    EXPECT_CALL(client1, on_message_received(_, _))
+        .Times(3)
+        .WillOnce([](const std::string &topic, const std::string &message) {
+            EXPECT_EQ(message, "data1");
+            EXPECT_EQ(topic, "topic");
+        })
+        .WillOnce([](const std::string &topic, const std::string &message) {
+            EXPECT_EQ(message, "data2");
+            EXPECT_EQ(topic, "topic");
+        })
+        .WillOnce([](const std::string &topic, const std::string &message) {
+            EXPECT_EQ(message, "data3");
+            EXPECT_EQ(topic, "topic");
+        });
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
     // Connect client2
     ASSERT_NO_THROW(client2.connect_socket("127.0.0.1", "12345"));
     ASSERT_NO_THROW(client2.connect("client2"));
@@ -60,12 +77,25 @@ TEST_F(ServerTest, AcceptsClientsConnection) {
     ASSERT_NO_THROW(client2.publish("topic", "data2"));
     ASSERT_NO_THROW(client2.publish("topic", "data3"));
 
-    // Wait for messages to be processed (optional, if needed)
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    // Check if server received all messages
+    auto received_messages = mock_server->get_received_messages();
+    ASSERT_EQ(received_messages.size(), 6);
+    EXPECT_EQ(received_messages[0], "CONNECT client1");
+    EXPECT_EQ(received_messages[1], "SUBSCRIBE topic");
+    EXPECT_EQ(received_messages[2], "CONNECT client2");
+    EXPECT_EQ(received_messages[3], "PUBLISH topic data1");
+    EXPECT_EQ(received_messages[4], "PUBLISH topic data2");
+    EXPECT_EQ(received_messages[5], "PUBLISH topic data3");
+
+    EXPECT_CALL(*mock_server, handle_disconnect(_)).Times(2);
 
     // Disconnect clients gracefully
     ASSERT_NO_THROW(client1.disconnect());
     ASSERT_NO_THROW(client2.disconnect());
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     // Stop the server and client IO contexts
     io_context.stop();
@@ -89,7 +119,6 @@ TEST_F(ServerTest, NoCrashWhenClientDisconnectsAndOtherClientPublishes) {
     boost::asio::io_context client1_io_context;
     boost::asio::io_context client2_io_context;
 
-    // Run the server in a separate thread
     std::thread server_thread([this]() {
         io_context.run();
     });
@@ -97,7 +126,6 @@ TEST_F(ServerTest, NoCrashWhenClientDisconnectsAndOtherClientPublishes) {
     PubSubClient client1(client1_io_context);
     PubSubClient client2(client2_io_context);
 
-    // Threads for running client IO contexts
     std::thread client1_thread([&client1_io_context]() {
         boost::asio::io_context::work work(client1_io_context);
         client1_io_context.run();
@@ -111,11 +139,12 @@ TEST_F(ServerTest, NoCrashWhenClientDisconnectsAndOtherClientPublishes) {
     // Step 1: Connect client1 and subscribe to a topic
     ASSERT_NO_THROW(client1.connect_socket("127.0.0.1", "12345"));
     ASSERT_NO_THROW(client1.connect("client1"));
-
     ASSERT_NO_THROW(client1.subscribe("topic"));
 
     // Small delay to ensure subscription is processed
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    EXPECT_CALL(*mock_server, handle_disconnect(_)).Times(1);
 
     // Step 2: (simulating disconnection)
     client1.disconnect();
@@ -125,18 +154,29 @@ TEST_F(ServerTest, NoCrashWhenClientDisconnectsAndOtherClientPublishes) {
 
     // Step 3: Connect client2 and publish data to the same topic
     ASSERT_NO_THROW(client2.connect_socket("127.0.0.1", "12345"));
-    ASSERT_NO_THROW(client2.connect("client1"));
+    ASSERT_NO_THROW(client2.connect("client2"));
 
     ASSERT_NO_THROW(client2.publish("topic", "data1"));
 
     // Small delay to ensure the message is processed
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    // Step 4: Verify no crash occurred
-    // If the test reaches this point without crashing, it means the server handled the scenario gracefully.
+    // Check if server received the message
+    auto received_messages = mock_server->get_received_messages();
+    ASSERT_EQ(received_messages.size(), 5);
+    EXPECT_EQ(received_messages[0], "CONNECT client1");
+    EXPECT_EQ(received_messages[1], "SUBSCRIBE topic");
+    EXPECT_EQ(received_messages[2], "DISCONNECT");
+    EXPECT_EQ(received_messages[3], "CONNECT client2");
+    EXPECT_EQ(received_messages[4], "PUBLISH topic data1");
+
+    EXPECT_CALL(*mock_server, handle_disconnect(_)).Times(1);
 
     // Clean up
     client2.disconnect();
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
     client2_io_context.stop();
     if (client2_thread.joinable()) {
         client2_thread.join();
