@@ -27,7 +27,7 @@ The publish-subscribe architecture is commonly used in distributed systems for e
 
 ## Prerequisites
 
-- **C++ Compiler**: Ensure you have a C++ compiler that supports C++11 or later.
+- **C++ Compiler**: Ensure you have a C++ compiler that supports C++20 or later.
 - **Boost Library**: Install the Boost library, specifically Boost.Asio and Boost.Log.
 
 ## Building the Project
@@ -53,7 +53,7 @@ Run the server application by specifying the port number:
 ./server_app <port>
 ```
 
-Example:
+# Example:
 
 ```bash
 ./server_app 12345
@@ -62,7 +62,7 @@ Example:
 ### Client Application
 Run the client application and use the following commands to interact with the server:
 
-Connect to the server:
+# Connect to the server:
 
 ```bash
 CONNECT <port> <client_name>
@@ -74,7 +74,7 @@ Example:
 CONNECT 12345 client1
 ```
 
-Subscribe to a topic:
+# Subscribe to a topic:
 
 ```bash
 SUBSCRIBE <topic_name>
@@ -86,7 +86,7 @@ Example:
 SUBSCRIBE weather
 ```
 
-Publish a message to a topic:
+# Publish a message to a topic:
 
 ```bash
 PUBLISH <topic_name> <data>
@@ -98,7 +98,7 @@ Example:
 PUBLISH weather "Sunny with a chance of rain"
 ```
 
-Unsubscribe from a topic:
+# Unsubscribe from a topic:
 
 ```bash
 UNSUBSCRIBE <topic_name>
@@ -110,7 +110,7 @@ Example:
 UNSUBSCRIBE weather
 ```
 
-Disconnect from the server:
+# Disconnect from the server:
 
 ```bash
 DISCONNECT
