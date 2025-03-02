@@ -1,6 +1,6 @@
 # Publish-Subscribe Communication Infrastructure
 
-This project implements a basic publish-subscribe communication protocol over TCP/IP using C++ and the Boost.Asio library. The system consists of a server application and a client application that communicate using a simple command-based interface.
+This project implements a basic publish-subscribe communication protocol over TCP/IP using C++ and the Boost.Asio library. The system consists of a server application and a client application that facilitate message exchange based on topic subscriptions.
 
 ## Overview
 
@@ -33,16 +33,16 @@ The publish-subscribe architecture is commonly used in distributed systems for e
 ## Building the Project
 
 1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/enemtsev/pubsub.git
-   cd pubsub
-   ```
+    ```bash
+    git clone https://github.com/enemtsev/pubsub.git
+    cd pubsub
+    ```
 
 2. **Build Applications**:
-   ```bash
-   cmake .
-   make
-   ```
+    ```bash
+    cmake .
+    make
+    ```
 
 ## Running the Applications
 
@@ -145,13 +145,13 @@ SUBSCRIBE weather
 Publish a message to the topic:
 
 ```bash
-PUBLISH weather "Sunny with a chance of rain"
+PUBLISH weather Sunny weather
 ```
 
 The client will receive and display the message:
 
 ```bash
-[Message] Topic: weather Data: Sunny with a chance of rain
+[Message] Topic: weather Data: Sunny weather
 ```
 
 Unsubscribe from the topic:
