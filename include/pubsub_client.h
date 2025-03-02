@@ -10,11 +10,13 @@
 class PubSubClient : public Client {
 public:
     PubSubClient(boost::asio::io_context &io_context);
+    void connect(const std::string& client_name);
+    void disconnect();
     void publish(const std::string& topic, const std::string& data);
     void subscribe(const std::string& topic);
     void unsubscribe(const std::string& topic);
 
-    void on_message_received(const std::string& message) override;
+    void on_message_received(const std::string &topic, const std::string& message) override;
     void write(const Message &message) override;
 };
 

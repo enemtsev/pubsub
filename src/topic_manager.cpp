@@ -1,5 +1,6 @@
 #include "topic_manager.h"
 #include <boost/log/trivial.hpp>
+#include "message.h"
 
 TopicManager &TopicManager::get_instance() {
     static TopicManager instance;
@@ -43,9 +44,19 @@ void TopicManager::publish(const std::string &topic, const std::string &data) {
 
     for (auto &socket : topics_[topic]) {
         if (socket->is_open()) {
-            std::string message = "[Message] Topic: " + topic + " Data: " + data + "\n";
+            Message msg;
+            msg.type = MessageType::PUBLISH;
+            msg.topic = topic;
+            msg.data = data;
+
+            std::string message = msg.serialize();
             BOOST_LOG_TRIVIAL(info) << "[topic_manager] Publishing message to topic: " << topic;
-            boost::asio::write(*socket, boost::asio::buffer(message));
+            boost::system::error_code ec;
+            boost::asio::write(*socket, boost::asio::buffer(message), ec);
+
+            if (ec) {
+                BOOST_LOG_TRIVIAL(warning) << "[topic_manager] Write failed: " << ec.message();
+            }
         } else {
             BOOST_LOG_TRIVIAL(warning) << "[topic_manager] Socket is closed, skipping message for topic: " << topic;
         }

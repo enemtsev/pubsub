@@ -55,7 +55,7 @@ void Server::handle_read(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
         client_buffer->append(read_buffer->data(), bytes_transferred);
 
         // Check if the buffer contains a complete message (delimited by std::endl)
-        std::size_t delimiter_pos = client_buffer->find('\n');
+        std::size_t delimiter_pos = client_buffer->find(Message::kDelim);
         while (delimiter_pos != std::string::npos) {
             // Extract the complete message
             std::string message = client_buffer->substr(0, delimiter_pos);
@@ -66,7 +66,7 @@ void Server::handle_read(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
             process_message(socket, message);
 
             // Look for the next message in the buffer
-            delimiter_pos = client_buffer->find('\n');
+            delimiter_pos = client_buffer->find(Message::kDelim);
         }
 
         // Continue reading from the client

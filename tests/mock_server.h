@@ -1,13 +1,13 @@
 #ifndef MOCK_SERVER_H
 #define MOCK_SERVER_H
 
-#include "server.h"
+#include "pubsub_server.h"
 #include <gmock/gmock.h>
 
-class MockServer : public Server {
+class MockServer : public PubSubServer {
 public:
     MockServer(boost::asio::io_context& io_context, short port)
-        : Server(io_context, port) {}
+        : PubSubServer(io_context, port) {}
 
     // Mock the process_message method
     MOCK_METHOD(void, process_message, (std::shared_ptr<boost::asio::ip::tcp::socket> socket, const std::string &message), (override));

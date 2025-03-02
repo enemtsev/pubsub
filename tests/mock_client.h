@@ -3,17 +3,26 @@
 
 #include "pubsub_client.h"
 #include <gmock/gmock.h>
+#include <vector>
 
 class MockClient : public PubSubClient {
 public:
     MockClient(boost::asio::io_context &io_context)
         : PubSubClient(io_context) {}
 
-    // Mock the on_message_received method
-    MOCK_METHOD(void, on_message_received, (const std::string& message), (override));
+    MOCK_METHOD(void, on_message_received, (const std::string& topic, const std::string& message), (override));
 
-    // Mock the write method
-    MOCK_METHOD(void, write, (const Message &message), (override));
+    void write(const Message &message) override {
+        captured_messages_.push_back(message);
+        PubSubClient::write(message);
+    }
+
+    const std::vector<Message>& getCapturedMessages() const {
+        return captured_messages_;
+    }
+
+private:
+    std::vector<Message> captured_messages_;
 };
 
 #endif // MOCK_CLIENT_H

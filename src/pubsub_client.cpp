@@ -6,6 +6,26 @@
 PubSubClient::PubSubClient(boost::asio::io_context &io_context)
     : Client(io_context) {}
 
+void PubSubClient::connect(const std::string &client_name) {
+    client_name_ = client_name;
+    boost::asio::post(exec_, [this, client_name]() {
+        BOOST_LOG_TRIVIAL(debug) << "[" << client_name << "] Connect as : " << client_name;
+        Message msg;
+        msg.type = MessageType::CONNECT;
+        msg.client_name = client_name;
+        write(msg);
+    });
+}
+
+void PubSubClient::disconnect() {
+    boost::asio::post(exec_, [this]() {
+        BOOST_LOG_TRIVIAL(debug) << "[" << client_name_ << "] Disconnect";
+        Message msg;
+        msg.type = MessageType::DISCONNECT;
+        write(msg);
+    });
+}
+
 void PubSubClient::publish(const std::string &topic, const std::string &data) {
     boost::asio::post(exec_, [this, topic, data]() {
         BOOST_LOG_TRIVIAL(debug) << "[" << client_name_ << "] Publishing to topic: " << topic;
@@ -40,14 +60,15 @@ void PubSubClient::unsubscribe(const std::string &topic) {
     });
 }
 
-void PubSubClient::on_message_received(const std::string &message) {
+void PubSubClient::on_message_received(const std::string &topic, const std::string &message) {
     // Handle incoming messages (e.g., published data from the server)
-    BOOST_LOG_TRIVIAL(info) << "[" << client_name_ << "] Received pub/sub message: " << message;
+    // [Message] Topic : <topic name> Data : < data > "
+    BOOST_LOG_TRIVIAL(info) << "[" << client_name_ << "] [Message] Topic: " << topic << "Data: " << message;
 }
 
 void PubSubClient::write(const Message &message) {
     boost::system::error_code error;
-    boost::asio::write(socket_, boost::asio::buffer(message.serialize()), error);
+    boost::asio::write(*socket_, boost::asio::buffer(message.serialize()), error);
 
     if (!error) {
         BOOST_LOG_TRIVIAL(debug) << "[" << message.client_name << "] Message written successfully";

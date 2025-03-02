@@ -32,18 +32,20 @@ void handle_console_input(boost::asio::posix::stream_descriptor &input, PubSubCl
                 std::string command;
                 std::getline(is, command);
 
-                if (command.substr(0, 7) == "CONNECT") {
+                if (command.substr(0, 7) == Message::kConnectCommand) {
                     size_t space1 = command.find(' ', 8);
                     if (space1 == std::string::npos) {
                         BOOST_LOG_TRIVIAL(error) << "Invalid CONNECT command. Usage: CONNECT <port> <client_name>";
                     } else {
                         std::string port = command.substr(8, space1 - 8);
                         std::string name = command.substr(space1 + 1);
-                        client.connect("127.0.0.1", port, name);
+                        client.connect_socket("127.0.0.1", port);
+                        client.connect(name);
                     }
-                } else if (command == "DISCONNECT") {
+                } else if (command == Message::kDisconnectCommand) {
                     client.disconnect();
-                } else if (command.substr(0, 7) == "PUBLISH") {
+                    client.disconnect_socket();
+                } else if (command.substr(0, 7) == Message::kPublishCommand) {
                     size_t space1 = command.find(' ', 8);
                     if (space1 == std::string::npos) {
                         BOOST_LOG_TRIVIAL(error) << "Invalid PUBLISH command. Usage: PUBLISH <topic> <data>";
@@ -52,21 +54,21 @@ void handle_console_input(boost::asio::posix::stream_descriptor &input, PubSubCl
                         std::string data = command.substr(space1 + 1);
                         client.publish(topic, data);
                     }
-                } else if (command.substr(0, 9) == "SUBSCRIBE") {
+                } else if (command.substr(0, 9) == Message::kSubscribeCommand) {
                     std::string topic = command.substr(10);
                     if (topic.empty()) {
                         BOOST_LOG_TRIVIAL(error) << "Invalid SUBSCRIBE command. Usage: SUBSCRIBE <topic>";
                     } else {
                         client.subscribe(topic);
                     }
-                } else if (command.substr(0, 11) == "UNSUBSCRIBE") {
+                } else if (command.substr(0, 11) == Message::kUnsubscribeCommand) {
                     std::string topic = command.substr(12);
                     if (topic.empty()) {
                         BOOST_LOG_TRIVIAL(error) << "Invalid UNSUBSCRIBE command. Usage: UNSUBSCRIBE <topic>";
                     } else {
                         client.unsubscribe(topic);
                     }
-                } else if (command == "HELP") {
+                } else if (command == Message::kHelpCommand) {
                     print_help();
                 } else {
                     BOOST_LOG_TRIVIAL(error) << "Unknown command. Type 'HELP' for a list of commands.";
