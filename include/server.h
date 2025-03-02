@@ -25,7 +25,7 @@ public:
 
 protected:
     boost::asio::ip::tcp::acceptor acceptor_;
-    TopicManager& topic_manager_;
+    TopicManager topic_manager_;
 };
 
 #endif // SERVER_H

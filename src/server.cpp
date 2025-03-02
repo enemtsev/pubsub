@@ -10,8 +10,7 @@
 #include "topic_manager.h"
 
 Server::Server(boost::asio::io_context &io_context, short port)
-    : acceptor_(io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)),
-      topic_manager_(TopicManager::get_instance()) {
+    : acceptor_(io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)) {
     BOOST_LOG_TRIVIAL(info) << "[server] Server started on port " << port;
     start_accept();
 }
@@ -26,7 +25,7 @@ void Server::start_accept() {
 void Server::handle_accept(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
                            const boost::system::error_code &error) {
     if (!error) {
-        BOOST_LOG_TRIVIAL(info) << "[server] New client connected";
+        BOOST_LOG_TRIVIAL(debug) << "[server] New client connected";
 
         // Create a buffer for the client
         auto client_buffer = std::make_shared<std::string>();
@@ -62,7 +61,7 @@ void Server::handle_read(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
             client_buffer->erase(0, delimiter_pos + 1);  // Remove the processed message from the buffer
 
             // Log and process the message
-            BOOST_LOG_TRIVIAL(info) << "[server] Received message: " << message;
+            BOOST_LOG_TRIVIAL(debug) << "[server] Received message: " << message;
             process_message(socket, message);
 
             // Look for the next message in the buffer

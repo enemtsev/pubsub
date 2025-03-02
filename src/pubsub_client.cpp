@@ -40,7 +40,7 @@ void PubSubClient::publish(const std::string &topic, const std::string &data) {
 
 void PubSubClient::subscribe(const std::string &topic) {
     boost::asio::post(exec_, [this, topic]() {
-        BOOST_LOG_TRIVIAL(info) << "[" << client_name_ << "] Subscribing to topic: " << topic;
+        BOOST_LOG_TRIVIAL(debug) << "[" << client_name_ << "] Subscribing to topic: " << topic;
         Message msg;
         msg.type = MessageType::SUBSCRIBE;
         msg.topic = topic;
@@ -51,7 +51,7 @@ void PubSubClient::subscribe(const std::string &topic) {
 
 void PubSubClient::unsubscribe(const std::string &topic) {
     boost::asio::post(exec_, [this, topic]() {
-        BOOST_LOG_TRIVIAL(info) << "[" << client_name_ << "] Unsubscribing from topic: " << topic;
+        BOOST_LOG_TRIVIAL(debug) << "[" << client_name_ << "] Unsubscribing from topic: " << topic;
         Message msg;
         msg.type = MessageType::UNSUBSCRIBE;
         msg.topic = topic;
@@ -63,7 +63,8 @@ void PubSubClient::unsubscribe(const std::string &topic) {
 void PubSubClient::on_message_received(const std::string &topic, const std::string &message) {
     // Handle incoming messages (e.g., published data from the server)
     // [Message] Topic : <topic name> Data : < data > "
-    BOOST_LOG_TRIVIAL(info) << "[" << client_name_ << "] [Message] Topic: " << topic << "Data: " << message;
+    BOOST_LOG_TRIVIAL(info) << "[" << client_name_ << "] [Message] Topic: \"" << topic << "\" Data: \"" << message
+                            << "\"";
 }
 
 void PubSubClient::write(const Message &message) {

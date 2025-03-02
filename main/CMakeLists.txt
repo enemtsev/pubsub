@@ -1,4 +1,4 @@
-add_executable(client_app client_main.cpp)
+add_executable(client_app client_main.cpp console.cpp)
 add_executable(server_app server_main.cpp)
 
 target_link_libraries(client_app publish_subscribe_lib)

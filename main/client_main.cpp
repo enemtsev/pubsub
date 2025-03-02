@@ -1,85 +1,19 @@
 #include <boost/asio.hpp>
-#include <boost/log/trivial.hpp>                          // Include Boost.Log headers
-#include <boost/log/utility/setup/common_attributes.hpp>  // For common attributes like timestamps
-#include <boost/log/utility/setup/console.hpp>            // For console logging
+#include <boost/log/trivial.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/utility/setup/console.hpp>
 #include <iostream>
 #include <sstream>
 #include <thread>
+#include "console.h"
 #include "pubsub_client.h"
 
 void init_logging() {
     boost::log::add_console_log(std::cout, boost::log::keywords::format = "%TimeStamp% [%Severity%]: %Message%");
     boost::log::add_common_attributes();
-}
-
-void print_help() {
-    BOOST_LOG_TRIVIAL(info) << "Available commands:";
-    BOOST_LOG_TRIVIAL(info)
-        << "  CONNECT <port> <client_name> - Connect to the server on the specified port with a client name";
-    BOOST_LOG_TRIVIAL(info) << "  DISCONNECT                  - Disconnect from the server";
-    BOOST_LOG_TRIVIAL(info) << "  PUBLISH <topic> <data>      - Publish a message to a topic";
-    BOOST_LOG_TRIVIAL(info) << "  SUBSCRIBE <topic>           - Subscribe to a topic";
-    BOOST_LOG_TRIVIAL(info) << "  UNSUBSCRIBE <topic>         - Unsubscribe from a topic";
-    BOOST_LOG_TRIVIAL(info) << "  HELP                        - Display this help message";
-}
-
-void handle_console_input(boost::asio::posix::stream_descriptor &input, PubSubClient &client) {
-    auto buffer = std::make_shared<boost::asio::streambuf>();
-    boost::asio::async_read_until(
-        input, *buffer, '\n', [&, buffer](const boost::system::error_code &ec, std::size_t length) {
-            if (!ec) {
-                std::istream is(buffer.get());
-                std::string command;
-                std::getline(is, command);
-
-                if (command.substr(0, 7) == Message::kConnectCommand) {
-                    size_t space1 = command.find(' ', 8);
-                    if (space1 == std::string::npos) {
-                        BOOST_LOG_TRIVIAL(error) << "Invalid CONNECT command. Usage: CONNECT <port> <client_name>";
-                    } else {
-                        std::string port = command.substr(8, space1 - 8);
-                        std::string name = command.substr(space1 + 1);
-                        client.connect_socket("127.0.0.1", port);
-                        client.connect(name);
-                    }
-                } else if (command == Message::kDisconnectCommand) {
-                    client.disconnect();
-                    client.disconnect_socket();
-                } else if (command.substr(0, 7) == Message::kPublishCommand) {
-                    size_t space1 = command.find(' ', 8);
-                    if (space1 == std::string::npos) {
-                        BOOST_LOG_TRIVIAL(error) << "Invalid PUBLISH command. Usage: PUBLISH <topic> <data>";
-                    } else {
-                        std::string topic = command.substr(8, space1 - 8);
-                        std::string data = command.substr(space1 + 1);
-                        client.publish(topic, data);
-                    }
-                } else if (command.substr(0, 9) == Message::kSubscribeCommand) {
-                    std::string topic = command.substr(10);
-                    if (topic.empty()) {
-                        BOOST_LOG_TRIVIAL(error) << "Invalid SUBSCRIBE command. Usage: SUBSCRIBE <topic>";
-                    } else {
-                        client.subscribe(topic);
-                    }
-                } else if (command.substr(0, 11) == Message::kUnsubscribeCommand) {
-                    std::string topic = command.substr(12);
-                    if (topic.empty()) {
-                        BOOST_LOG_TRIVIAL(error) << "Invalid UNSUBSCRIBE command. Usage: UNSUBSCRIBE <topic>";
-                    } else {
-                        client.unsubscribe(topic);
-                    }
-                } else if (command == Message::kHelpCommand) {
-                    print_help();
-                } else {
-                    BOOST_LOG_TRIVIAL(error) << "Unknown command. Type 'HELP' for a list of commands.";
-                }
-
-                // Continue reading the next command
-                handle_console_input(input, client);
-            } else {
-                BOOST_LOG_TRIVIAL(error) << "Error reading from console: " << ec.message();
-            }
-        });
+    boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
+    // Debug
+    // boost::log::core::get()->set_filter(logging::trivial::severity >= boost::log::trivial::debug);
 }
 
 int main() {
@@ -88,12 +22,10 @@ int main() {
     boost::asio::io_context io_context;
     PubSubClient client(io_context);
 
-    // Print the help message at the start
-    print_help();
-
     // Set up asynchronous console input
     boost::asio::posix::stream_descriptor input(io_context, ::dup(STDIN_FILENO));
-    handle_console_input(input, client);
+    pubsub_client::handle_console_input(input, client);
+    pubsub_client::print_help();
 
     io_context.run();
     return 0;

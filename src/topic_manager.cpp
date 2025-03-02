@@ -2,12 +2,6 @@
 #include <boost/log/trivial.hpp>
 #include "message.h"
 
-TopicManager TopicManager::instance_;
-
-TopicManager &TopicManager::get_instance() {
-    return instance_;
-}
-
 void TopicManager::subscribe(const std::string &topic, std::shared_ptr<boost::asio::ip::tcp::socket> socket) {
     topics_[topic].insert(socket);
 }
@@ -51,7 +45,7 @@ void TopicManager::publish(const std::string &topic, const std::string &data) {
             msg.data = data;
 
             std::string message = msg.serialize();
-            BOOST_LOG_TRIVIAL(info) << "[topic_manager] Publishing message to topic: " << topic;
+            BOOST_LOG_TRIVIAL(debug) << "[topic_manager] Publishing message to topic: " << topic;
             boost::system::error_code ec;
             boost::asio::write(*socket, boost::asio::buffer(message), ec);
 

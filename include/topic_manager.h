@@ -7,17 +7,14 @@
 #include <boost/asio.hpp>
 #include <memory>
 
-class TopicManager {
+class TopicManager final {
 public:
-    static TopicManager& get_instance();
     void subscribe(const std::string& topic, std::shared_ptr<boost::asio::ip::tcp::socket> socket);
     void unsubscribe(const std::string& topic, std::shared_ptr<boost::asio::ip::tcp::socket> socket);
     void unsubscribe_all(std::shared_ptr<boost::asio::ip::tcp::socket> socket);
     void publish(const std::string& topic, const std::string& data);
 
 private:
-    static TopicManager instance_;
-    TopicManager() {}
     std::unordered_map<std::string, std::set<std::shared_ptr<boost::asio::ip::tcp::socket>>> topics_;
 };
 

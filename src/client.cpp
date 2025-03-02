@@ -45,7 +45,7 @@ void Client::start_reading() {
             if (!error) {
                 BOOST_LOG_TRIVIAL(debug) << "[" << client_name_ << "] Received data: " << bytes_transferred << " bytes";
                 std::string message(read_buffer->data(), bytes_transferred);
-                BOOST_LOG_TRIVIAL(info) << "[" << client_name_ << "] Received raw message: " << message;
+                BOOST_LOG_TRIVIAL(debug) << "[" << client_name_ << "] Received raw message: " << message;
 
                 handle_read(socket_, client_buffer, read_buffer, error, bytes_transferred);
             } else if (error == boost::asio::error::eof) {
@@ -72,7 +72,7 @@ void Client::handle_read(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
             client_buffer->erase(0, delimiter_pos + 1);  // Remove the processed message from the buffer
 
             // Log and process the message
-            BOOST_LOG_TRIVIAL(info) << "[" << client_name_ << "] Received message: " << message;
+            BOOST_LOG_TRIVIAL(debug) << "[" << client_name_ << "] Received message: " << message;
             Message msg = Message::deserialize(message);
             if (msg.type == MessageType::PUBLISH) {
                 on_message_received(msg.topic, msg.data);

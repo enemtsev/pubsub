@@ -7,7 +7,10 @@
 
 void init_logging() {
     boost::log::add_console_log(std::cout, boost::log::keywords::format = "%TimeStamp% [%Severity%]: %Message%");
-    boost::log::add_common_attributes();  // Add common attributes like timestamps
+    boost::log::add_common_attributes();
+    boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::info);
+    // Debug
+    // boost::log::core::get()->set_filter(logging::trivial::severity >= boost::log::trivial::debug);
 }
 
 int main(int argc, char *argv[]) {

@@ -1,0 +1,81 @@
+@startuml
+!define LIGHTBULB(c) class c << (L,#FF7700) >>
+!define STAR(c) class c << (S,#FF7700) >>
+
+LIGHTBULB(Client) {
+    - boost::asio::executor exec_
+    - std::shared_ptr<boost::asio::ip::tcp::socket> socket_
+    - std::string client_name_
+    + Client(boost::asio::io_context &io_context)
+    + ~Client() = default
+    + void connect_socket(const std::string& host, const std::string& port)
+    + void disconnect_socket()
+    + void start_reading()
+    + {abstract} void on_message_received(const std::string& topic, const std::string& message)
+    + {abstract} void write(const Message &message)
+}
+
+enum MessageType {
+    CONNECT
+    DISCONNECT
+    PUBLISH
+    SUBSCRIBE
+    UNSUBSCRIBE
+    UNKNOWN
+}
+
+STAR(Message) {
+    + MessageType type
+    + std::string topic
+    + std::string data
+    + std::string client_name
+    + std::string serialize() const
+    + static Message deserialize(const std::string& message)
+}
+
+class PubSubClient {
+    + PubSubClient(boost::asio::io_context &io_context)
+    + void connect(const std::string& client_name)
+    + void disconnect()
+    + void publish(const std::string& topic, const std::string& data)
+    + void subscribe(const std::string& topic)
+    + void unsubscribe(const std::string& topic)
+    + void on_message_received(const std::string &topic, const std::string& message)
+    + void write(const Message &message)
+}
+
+PubSubClient --|> Client
+
+class PubSubServer {
+    + PubSubServer(boost::asio::io_context& io_context, short port)
+    + void process_message(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const std::string &message)
+}
+
+PubSubServer --|> Server
+
+LIGHTBULB(Server) {
+    - boost::asio::ip::tcp::acceptor acceptor_
+    - TopicManager& topic_manager_
+    + Server(boost::asio::io_context& io_context, short port)
+    + ~Server() = default
+    + void start_accept()
+    + void handle_accept(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const boost::system::error_code& error)
+    + void handle_read(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
+                      std::shared_ptr<std::string> client_buffer,
+                      std::shared_ptr<std::array<char, 1024>> read_buffer, const boost::system::error_code &error,
+                      std::size_t bytes_transferred)
+    + {abstract} void process_message(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const std::string &message)
+    + void handle_disconnect(std::shared_ptr<boost::asio::ip::tcp::socket> socket)
+}
+
+class TopicManager {
+    + static TopicManager& get_instance()
+    + void subscribe(const std::string& topic, std::shared_ptr<boost::asio::ip::tcp::socket> socket)
+    + void unsubscribe(const std::string& topic, std::shared_ptr<boost::asio::ip::tcp::socket> socket)
+    + void unsubscribe_all(std::shared_ptr<boost::asio::ip::tcp::socket> socket)
+    + void publish(const std::string& topic, const std::string& data)
+    - static TopicManager instance_
+    - std::unordered_map<std::string, std::set<std::shared_ptr<boost::asio::ip::tcp::socket>>> topics_
+}
+
+@enduml
