@@ -5,6 +5,8 @@
 #include <vector>
 #include <sstream>
 
+namespace pubsub {
+
 // Message types
 enum class MessageType {
     CONNECT,
@@ -20,7 +22,6 @@ struct Message {
     MessageType type;
     std::string topic;
     std::string data;
-    std::string client_name;
 
     // Serialize the message into a string
     std::string serialize() const;
@@ -36,5 +37,7 @@ struct Message {
     static constexpr std::string kUnknowndCommand{"UNKNOWN"};
     static constexpr std::string kDelim{"\n"};
 };
+
+}  // namespace pubsub
 
 #endif // MESSAGE_H

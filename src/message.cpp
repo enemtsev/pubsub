@@ -4,12 +4,14 @@
 #include <sstream>
 #include <vector>
 
+namespace pubsub {
+
 // Serialize the message into a string with endl as delimiter
 std::string Message::serialize() const {
     std::ostringstream oss;
     switch (type) {
         case MessageType::CONNECT:
-            oss << kConnectCommand << " " << client_name;
+            oss << kConnectCommand << " " << data;
             break;
         case MessageType::DISCONNECT:
             oss << kDisconnectCommand;
@@ -40,7 +42,7 @@ Message Message::deserialize(const std::string &message) {
 
     if (command == kConnectCommand) {
         msg.type = MessageType::CONNECT;
-        iss >> msg.client_name;
+        iss >> msg.data;
     } else if (command == kDisconnectCommand) {
         msg.type = MessageType::DISCONNECT;
     } else if (command == kPublishCommand) {
@@ -64,3 +66,5 @@ Message Message::deserialize(const std::string &message) {
 
     return msg;
 }
+
+}  // namespace pubsub

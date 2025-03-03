@@ -6,11 +6,12 @@
 
 using ::testing::_;
 using ::testing::Return;
+using namespace pubsub;
 
 class ClientTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        server = std::make_unique<PubSubServer>(io_context, 12345);
+        server = std::make_unique<server::PubSubServer>(io_context, 12345);
     }
 
     void TearDown() override {
@@ -18,7 +19,7 @@ protected:
     }
 
     boost::asio::io_context io_context;
-    std::unique_ptr<PubSubServer> server;
+    std::unique_ptr<server::PubSubServer> server;
 };
 
 // Test that the client sends propper connect message
@@ -44,7 +45,7 @@ TEST_F(ClientTest, ConnectsToServer) {
     const auto &messages = client.get_captured_messages();
     ASSERT_EQ(messages.size(), 1);
     EXPECT_EQ(messages[0].type, MessageType::CONNECT);
-    EXPECT_EQ(messages[0].client_name, "client1");
+    EXPECT_EQ(messages[0].data, "client1");
 
     client.disconnect();
     io_context.stop();
@@ -84,7 +85,7 @@ TEST_F(ClientTest, SendsSubscribeMessage) {
     const auto &messages = client.get_captured_messages();
     ASSERT_EQ(messages.size(), 2);
     EXPECT_EQ(messages[0].type, MessageType::CONNECT);
-    EXPECT_EQ(messages[0].client_name, "client1");
+    EXPECT_EQ(messages[0].data, "client1");
     EXPECT_EQ(messages[1].type, MessageType::SUBSCRIBE);
     EXPECT_EQ(messages[1].topic, "topic");
 
@@ -124,7 +125,7 @@ TEST_F(ClientTest, SendsPublishMessage) {
     const auto &messages = client.get_captured_messages();
     ASSERT_EQ(messages.size(), 2);
     EXPECT_EQ(messages[0].type, MessageType::CONNECT);
-    EXPECT_EQ(messages[0].client_name, "client1");
+    EXPECT_EQ(messages[0].data, "client1");
     EXPECT_EQ(messages[1].type, MessageType::PUBLISH);
     EXPECT_EQ(messages[1].topic, "topic");
     EXPECT_EQ(messages[1].data, "data");

@@ -14,9 +14,9 @@ static void BM_Publish(benchmark::State &state) {
     boost::asio::io_context client1_io_context;
     boost::asio::io_context client2_io_context;
 
-    PubSubServer server(io_server_context, 12345);
-    PubSubClient client1(client1_io_context);
-    PubSubClient client2(client2_io_context);
+    pubsub::server::PubSubServer server(io_server_context, 12345);
+    pubsub::client::PubSubClient client1(client1_io_context);
+    pubsub::client::PubSubClient client2(client2_io_context);
 
     std::thread server_thread([&io_server_context]() {
         io_server_context.run();

@@ -1,7 +1,5 @@
 add_library(publish_subscribe_lib
-    client.cpp
     pubsub_client.cpp
-    server.cpp
     pubsub_server.cpp
     message.cpp
     topic_manager.cpp

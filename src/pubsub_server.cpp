@@ -8,8 +8,98 @@
 #include <unordered_set>
 #include "message.h"
 
+namespace pubsub::server {
+
 PubSubServer::PubSubServer(boost::asio::io_context &io_context, short port)
-    : Server(io_context, port) {}
+    : Server(),
+      acceptor_(io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)) {
+    BOOST_LOG_TRIVIAL(info) << "[server] Server started on port " << port;
+    start_accept();
+}
+
+void PubSubServer::start_accept() {
+    auto socket = std::make_shared<boost::asio::ip::tcp::socket>(acceptor_.get_executor());
+    acceptor_.async_accept(*socket, [this, socket](const boost::system::error_code &error) {
+        handle_accept(socket, error);
+    });
+}
+
+void PubSubServer::handle_accept(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
+                                 const boost::system::error_code &error) {
+    if (!error) {
+        BOOST_LOG_TRIVIAL(debug) << "[server] New client connected";
+
+        // Create a buffer for the client
+        auto client_buffer = std::make_shared<std::string>();
+        auto read_buffer = std::make_shared<std::array<char, 1024>>();
+
+        // Start reading from the client
+        socket->async_read_some(boost::asio::buffer(*read_buffer),
+                                [this, socket, client_buffer, read_buffer](const boost::system::error_code &error,
+                                                                           std::size_t bytes_transferred) {
+                                    handle_read(socket, client_buffer, read_buffer, error, bytes_transferred);
+                                });
+
+        // Accept the next client
+        start_accept();
+    } else {
+        BOOST_LOG_TRIVIAL(error) << "[server] Error accepting connection: " << error.message();
+    }
+}
+
+void PubSubServer::handle_read(std::shared_ptr<boost::asio::ip::tcp::socket> socket,
+                               std::shared_ptr<std::string> client_buffer,
+                               std::shared_ptr<std::array<char, 1024>> read_buffer,
+                               const boost::system::error_code &error, std::size_t bytes_transferred) {
+    if (!error) {
+        // Append the received data to the client buffer
+        client_buffer->append(read_buffer->data(), bytes_transferred);
+
+        // Check if the buffer contains a complete message (delimited by std::endl)
+        std::size_t delimiter_pos = client_buffer->find(Message::kDelim);
+        while (delimiter_pos != std::string::npos) {
+            // Extract the complete message
+            std::string message = client_buffer->substr(0, delimiter_pos);
+            client_buffer->erase(0, delimiter_pos + 1);  // Remove the processed message from the buffer
+
+            // Log and process the message
+            BOOST_LOG_TRIVIAL(debug) << "[server] Received message: " << message;
+            process_message(socket, message);
+
+            // Look for the next message in the buffer
+            delimiter_pos = client_buffer->find(Message::kDelim);
+        }
+
+        // Continue reading from the client
+        socket->async_read_some(boost::asio::buffer(*read_buffer),
+                                [this, socket, client_buffer, read_buffer](const boost::system::error_code &error,
+                                                                           std::size_t bytes_transferred) {
+                                    handle_read(socket, client_buffer, read_buffer, error, bytes_transferred);
+                                });
+    } else {
+        BOOST_LOG_TRIVIAL(error) << "[server] Error reading from client: " << error.message();
+        handle_disconnect(socket);
+    }
+}
+
+void PubSubServer::handle_disconnect(std::shared_ptr<boost::asio::ip::tcp::socket> socket) {
+    topic_manager_.unsubscribe_all(socket);
+
+    // Close the socket
+    if (socket->is_open()) {
+        boost::system::error_code ec;
+        socket->shutdown(boost::asio::ip::tcp::socket::shutdown_both, ec);
+        if (ec) {
+            BOOST_LOG_TRIVIAL(error) << "[server] Error shutting down socket: " << ec.message();
+        }
+        socket->close(ec);
+        if (ec) {
+            BOOST_LOG_TRIVIAL(error) << "[server] Error closing socket: " << ec.message();
+        }
+    }
+
+    BOOST_LOG_TRIVIAL(info) << "[server] Client disconnected and unsubscribed from all topics";
+}
 
 void PubSubServer::process_message(std::shared_ptr<boost::asio::ip::tcp::socket> socket, const std::string &message) {
     Message msg = Message::deserialize(message);
@@ -17,7 +107,7 @@ void PubSubServer::process_message(std::shared_ptr<boost::asio::ip::tcp::socket>
     // Handle the message based on its type
     switch (msg.type) {
         case MessageType::CONNECT:
-            BOOST_LOG_TRIVIAL(info) << "[server] Client connected: " << msg.client_name;
+            BOOST_LOG_TRIVIAL(info) << "[server] Client connected: " << msg.data;
             break;
 
         case MessageType::DISCONNECT:
@@ -45,3 +135,5 @@ void PubSubServer::process_message(std::shared_ptr<boost::asio::ip::tcp::socket>
             break;
     }
 }
+
+}  // namespace pubsub::server

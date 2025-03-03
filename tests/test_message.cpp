@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include "message.h"
 
+using namespace pubsub;
+
 TEST(MessageTest, SerializePublish) {
     Message msg;
     msg.type = MessageType::PUBLISH;
@@ -12,7 +14,7 @@ TEST(MessageTest, SerializePublish) {
 TEST(MessageTest, SerializeConnect) {
     Message msg;
     msg.type = MessageType::CONNECT;
-    msg.client_name = "client1";
+    msg.data = "client1";
     EXPECT_EQ(msg.serialize(), "CONNECT client1\n");
 }
 
@@ -46,7 +48,7 @@ TEST(MessageTest, DeserializeConnect) {
     std::string input = "CONNECT client1";
     Message msg = Message::deserialize(input);
     EXPECT_EQ(msg.type, MessageType::CONNECT);
-    EXPECT_EQ(msg.client_name, "client1");
+    EXPECT_EQ(msg.data, "client1");
 }
 
 TEST(MessageTest, DeserializeDisconnect) {

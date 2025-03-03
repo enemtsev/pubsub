@@ -20,12 +20,12 @@ int main() {
     init_logging();  // Initialize Boost.Log
 
     boost::asio::io_context io_context;
-    PubSubClient client(io_context);
+    pubsub::client::PubSubClient client(io_context);
 
     // Set up asynchronous console input
     boost::asio::posix::stream_descriptor input(io_context, ::dup(STDIN_FILENO));
-    pubsub_client::handle_console_input(input, client);
-    pubsub_client::print_help();
+    pubsub::client::handle_console_input(input, client);
+    pubsub::client::print_help();
 
     io_context.run();
     return 0;

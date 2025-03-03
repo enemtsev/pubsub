@@ -2,7 +2,7 @@
 
 #include <boost/log/trivial.hpp>
 
-namespace pubsub_client {
+namespace pubsub::client {
 
 void print_help() {
     BOOST_LOG_TRIVIAL(info) << "Available commands:";
@@ -74,4 +74,4 @@ void handle_console_input(boost::asio::posix::stream_descriptor &input, PubSubCl
         });
 }
 
-}  // namespace pubsub_client
+}  // namespace pubsub::client

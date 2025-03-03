@@ -123,8 +123,8 @@ TEST_F(ServerTest, NoCrashWhenClientDisconnectsAndOtherClientPublishes) {
         io_context.run();
     });
 
-    PubSubClient client1(client1_io_context);
-    PubSubClient client2(client2_io_context);
+    pubsub::client::PubSubClient client1(client1_io_context);
+    pubsub::client::PubSubClient client2(client2_io_context);
 
     std::thread client1_thread([&client1_io_context]() {
         boost::asio::io_context::work work(client1_io_context);

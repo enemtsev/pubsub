@@ -2,6 +2,8 @@
 #include <boost/log/trivial.hpp>
 #include "message.h"
 
+namespace pubsub {
+
 void TopicManager::subscribe(const std::string &topic, std::shared_ptr<boost::asio::ip::tcp::socket> socket) {
     topics_[topic].insert(socket);
 }
@@ -57,3 +59,5 @@ void TopicManager::publish(const std::string &topic, const std::string &data) {
         }
     }
 }
+
+}  // namespace pubsub

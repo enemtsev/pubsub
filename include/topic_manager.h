@@ -7,6 +7,8 @@
 #include <boost/asio.hpp>
 #include <memory>
 
+namespace pubsub {
+
 class TopicManager final {
 public:
     void subscribe(const std::string& topic, std::shared_ptr<boost::asio::ip::tcp::socket> socket);
@@ -17,5 +19,7 @@ public:
 private:
     std::unordered_map<std::string, std::set<std::shared_ptr<boost::asio::ip::tcp::socket>>> topics_;
 };
+
+}  // namespace pubsub
 
 #endif // TOPIC_MANAGER_H
