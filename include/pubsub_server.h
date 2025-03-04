@@ -25,6 +25,7 @@ protected:
 private:
     boost::asio::ip::tcp::acceptor acceptor_;
     TopicManager topic_manager_;
+    boost::asio::ip::tcp::endpoint endp_;
 
     void start_accept();
     void handle_accept(SocketSPtr socket, const boost::system::error_code& error);

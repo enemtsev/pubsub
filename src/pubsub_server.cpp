@@ -12,12 +12,37 @@ namespace pubsub::server {
 
 PubSubServer::PubSubServer(boost::asio::io_context &io_context, short port)
     : Server(),
-      acceptor_(io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)) {
+      acceptor_(io_context),
+      endp_(boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)) {
     BOOST_LOG_TRIVIAL(info) << "[server] Server started on port " << port;
+
+    boost::system::error_code ec;
+    acceptor_.open(endp_.protocol(), ec);
+    if (ec) {
+        BOOST_LOG_TRIVIAL(error) << "[server] socket open error " << ec.message();
+        return;
+    }
+
+    acceptor_.set_option(
+        boost::asio::basic_socket_acceptor<boost::asio::generic::stream_protocol>::reuse_address(true));
+
+    acceptor_.bind(endp_, ec);
+    if (ec) {
+        BOOST_LOG_TRIVIAL(error) << "[server] socket bind error " << ec.message();
+        return;
+    }
+
+    acceptor_.listen(boost::asio::socket_base::max_listen_connections, ec);
+    if (ec) {
+        BOOST_LOG_TRIVIAL(error) << "[server] socket listen error " << ec.message();
+        return;
+    }
+
     start_accept();
 }
 
 void PubSubServer::start_accept() {
+    BOOST_LOG_TRIVIAL(debug) << "[server] Waiting for new connection...";
     auto socket = std::make_shared<boost::asio::ip::tcp::socket>(acceptor_.get_executor());
     acceptor_.async_accept(*socket, [this, socket](const boost::system::error_code &error) {
         handle_accept(socket, error);

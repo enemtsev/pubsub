@@ -13,12 +13,14 @@ class PubSubClient : public Client {
 public:
     explicit PubSubClient(boost::asio::io_context &io_context);
 
+    // message commands
     void connect(const std::string& client_name);
     void disconnect();
     void publish(const std::string& topic, const std::string& data);
     void subscribe(const std::string& topic);
     void unsubscribe(const std::string& topic);
 
+    // socket
     void connect_socket(const std::string& host, const std::string& port);
     void disconnect_socket();
 

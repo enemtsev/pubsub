@@ -2,8 +2,6 @@
 #define MESSAGE_H
 
 #include <string>
-#include <vector>
-#include <sstream>
 
 namespace pubsub {
 
